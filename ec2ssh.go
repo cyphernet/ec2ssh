@@ -3,20 +3,20 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"os/user"
 	"strconv"
 	"strings"
-	"text/tabwriter"
-	"os/exec"	
 	"sync"
- 	"io/ioutil"
+	"text/tabwriter"
 
-	"github.com/vaughan0/go-ini"
 	"github.com/awslabs/aws-sdk-go/aws"
 	"github.com/awslabs/aws-sdk-go/aws/credentials"
 	"github.com/awslabs/aws-sdk-go/service/ec2"
 	"github.com/codegangsta/cli"
+	"github.com/vaughan0/go-ini"
 )
 
 type password string
@@ -61,32 +61,32 @@ func main() {
 		}
 
 		fmt.Println("Connecting to " + instances[i].Name + " (" + instances[i].IP + ")")
-		
+
 		usr, err := user.Current()
-    	if err != nil {
-    	    panic(err)
-	    }
+		if err != nil {
+			panic(err)
+		}
 
 		configFile := usr.HomeDir + string(os.PathSeparator) + ".ec2ssh"
 		username := ""
 		key := ""
-		if _, err := os.Stat(configFile); os.IsNotExist(err) {			
+		if _, err := os.Stat(configFile); os.IsNotExist(err) {
 			defaultConfig := "[ssh]\nusername = \nkey ="
 			err = ioutil.WriteFile(configFile, []byte(defaultConfig), 0644)
-    		if err != nil {
-		        panic(err)
-    		}
-		    
+			if err != nil {
+				panic(err)
+			}
+
 		} else {
 			file, err := ini.LoadFile(configFile)
 			if err != nil {
-		        panic(err)
-    		}
-			
+				panic(err)
+			}
+
 			username, _ = file.Get("ssh", "username")
 			key, _ = file.Get("ssh", "key")
 		}
-			
+
 		cmd := exec.Command("ssh", "-i", key, username+"@"+instances[i].IP)
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
