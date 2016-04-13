@@ -12,9 +12,9 @@ import (
 	"sync"
 	"text/tabwriter"
 
-	"github.com/awslabs/aws-sdk-go/aws"
-	"github.com/awslabs/aws-sdk-go/aws/credentials"
-	"github.com/awslabs/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/codegangsta/cli"
 	"github.com/vaughan0/go-ini"
 )
@@ -42,7 +42,8 @@ func main() {
 			})
 
 		svc := ec2.New(&aws.Config{Region: c.String("region"), Credentials: &credentials})
-		instances := getInstances(svc)
+		
+		instances := getInstances(svc, (c.Args().First() == "a"))
 
 		w := new(tabwriter.Writer)
 		w.Init(os.Stdout, 0, 8, 0, '\t', 0)

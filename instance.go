@@ -2,8 +2,8 @@ package main
 
 import (
     "sort"
-    
-    "github.com/awslabs/aws-sdk-go/service/ec2"
+
+    "github.com/aws/aws-sdk-go/service/ec2"
 )
 
 type Instance struct {
@@ -28,7 +28,7 @@ func (slice Instances) Swap(i, j int) {
     slice[i], slice[j] = slice[j], slice[i]
 }
 
-func getInstances(svc *ec2.EC2) Instances {
+func getInstances(svc *ec2.EC2, all bool) Instances {
     
     instances := Instances{}
 
@@ -45,7 +45,11 @@ func getInstances(svc *ec2.EC2) Instances {
                     name = *tag.Value
                 }
             }
-            instances = append(instances, Instance{name, *inst.PrivateIPAddress, *inst.InstanceID, *inst.InstanceType, *inst.State.Name})
+            if(inst.PrivateIPAddress != nil) {
+                if(all || *inst.State.Name == "running") {
+                    instances = append(instances, Instance{name, *inst.PrivateIPAddress, *inst.InstanceID, *inst.InstanceType, *inst.State.Name})
+                }
+            }
         }
     }
 
