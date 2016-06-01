@@ -6,7 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
-type Instance struct {
+type instance struct {
 	Name         string
 	IP           string
 	ID           string
@@ -14,23 +14,23 @@ type Instance struct {
 	State        string
 }
 
-type Instances []Instance
+type instances []instance
 
-func (slice Instances) Len() int {
+func (slice instances) Len() int {
 	return len(slice)
 }
 
-func (slice Instances) Less(i, j int) bool {
+func (slice instances) Less(i, j int) bool {
 	return slice[i].Name < slice[j].Name
 }
 
-func (slice Instances) Swap(i, j int) {
+func (slice instances) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func getInstances(svc *ec2.EC2, all bool) Instances {
+func getInstances(svc *ec2.EC2, all bool) instances {
 
-	instances := Instances{}
+	loadedInstances := instances{}
 
 	resp, err := svc.DescribeInstances(nil)
 	if err != nil {
@@ -47,13 +47,13 @@ func getInstances(svc *ec2.EC2, all bool) Instances {
 			}
 			if inst.PrivateIPAddress != nil {
 				if all || *inst.State.Name == "running" {
-					instances = append(instances, Instance{name, *inst.PrivateIPAddress, *inst.InstanceID, *inst.InstanceType, *inst.State.Name})
+					loadedInstances = append(loadedInstances, instance{name, *inst.PrivateIPAddress, *inst.InstanceID, *inst.InstanceType, *inst.State.Name})
 				}
 			}
 		}
 	}
 
-	sort.Sort(instances)
+	sort.Sort(loadedInstances)
 
-	return instances
+	return loadedInstances
 }

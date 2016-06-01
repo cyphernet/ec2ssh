@@ -43,12 +43,12 @@ func main() {
 
 		svc := ec2.New(&aws.Config{Region: c.String("region"), Credentials: &credentials})
 
-		instances := getInstances(svc, (c.Args().First() == "a"))
+		ec2Instances := getInstances(svc, (c.Args().First() == "a"))
 
 		w := new(tabwriter.Writer)
 		w.Init(os.Stdout, 0, 8, 0, '\t', 0)
 		fmt.Fprintln(w, "Index\tName\tIP\tInstance Type\tState")
-		for i, c := range instances {
+		for i, c := range ec2Instances {
 			fmt.Fprintln(w, strconv.Itoa(i)+"\t"+c.Name+"\t"+c.IP+"\t"+c.InstanceType+"\t"+c.State)
 		}
 		w.Flush()
@@ -61,7 +61,7 @@ func main() {
 			panic(err)
 		}
 
-		fmt.Println("Connecting to " + instances[i].Name + " (" + instances[i].IP + ")")
+		fmt.Println("Connecting to " + ec2Instances[i].Name + " (" + ec2Instances[i].IP + ")")
 
 		usr, err := user.Current()
 		if err != nil {
@@ -88,7 +88,7 @@ func main() {
 			key, _ = file.Get("ssh", "key")
 		}
 
-		cmd := exec.Command("ssh", "-i", key, username+"@"+instances[i].IP)
+		cmd := exec.Command("ssh", "-i", key, username+"@"+ec2Instances[i].IP)
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
