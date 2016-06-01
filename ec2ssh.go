@@ -42,7 +42,7 @@ func main() {
 			})
 
 		svc := ec2.New(&aws.Config{Region: c.String("region"), Credentials: &credentials})
-		
+
 		instances := getInstances(svc, (c.Args().First() == "a"))
 
 		w := new(tabwriter.Writer)
