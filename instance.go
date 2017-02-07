@@ -45,9 +45,9 @@ func getInstances(svc *ec2.EC2, all bool) instances {
 					name = *tag.Value
 				}
 			}
-			if inst.PrivateIPAddress != nil {
+			if inst.PrivateIpAddress != nil {
 				if all || *inst.State.Name == "running" {
-					loadedInstances = append(loadedInstances, instance{name, *inst.PrivateIPAddress, *inst.InstanceID, *inst.InstanceType, *inst.State.Name})
+					loadedInstances = append(loadedInstances, instance{name, *inst.PrivateIpAddress, *inst.InstanceId, *inst.InstanceType, *inst.State.Name})
 				}
 			}
 		}

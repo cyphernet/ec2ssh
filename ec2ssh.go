@@ -9,7 +9,6 @@ import (
 	"os/user"
 	"strconv"
 	"strings"
-	"sync"
 	"text/tabwriter"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -17,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/codegangsta/cli"
 	"github.com/vaughan0/go-ini"
+	"github.com/aws/aws-sdk-go/aws/session"
 )
 
 type password string
@@ -25,8 +25,6 @@ func (p password) Password(user string) (password string, err error) {
 	return string(p), nil
 }
 
-var wg sync.WaitGroup
-
 func main() {
 
 	app := cli.NewApp()
@@ -34,14 +32,17 @@ func main() {
 	app.Usage = "ssh into ec2 instances"
 	app.Action = func(c *cli.Context) {
 
-		credentials := *credentials.NewChainCredentials(
+		awsCredentials := *credentials.NewChainCredentials(
 			[]credentials.Provider{
 				&credentials.EnvProvider{},
 				&credentials.SharedCredentialsProvider{Filename: "", Profile: c.String("profile")},
-				&credentials.EC2RoleProvider{},
 			})
 
-		svc := ec2.New(&aws.Config{Region: c.String("region"), Credentials: &credentials})
+		sess, err := session.NewSession(&aws.Config{
+			MaxRetries: aws.Int(3),
+		})
+
+		svc := ec2.New(sess, &aws.Config{Region: aws.String(c.String("region")), Credentials: &awsCredentials})
 
 		ec2Instances := getInstances(svc, (c.Args().First() == "a"))
 
