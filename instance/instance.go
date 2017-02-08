@@ -1,4 +1,4 @@
-package main
+package instance
 
 import (
 	"sort"
@@ -14,23 +14,23 @@ type instance struct {
 	State        string
 }
 
-type instances []instance
+type Instances []instance
 
-func (slice instances) Len() int {
+func (slice Instances) Len() int {
 	return len(slice)
 }
 
-func (slice instances) Less(i, j int) bool {
+func (slice Instances) Less(i, j int) bool {
 	return slice[i].Name < slice[j].Name
 }
 
-func (slice instances) Swap(i, j int) {
+func (slice Instances) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func getInstances(svc *ec2.EC2, all bool) instances {
+func GetInstances(svc *ec2.EC2, all bool) Instances {
 
-	loadedInstances := instances{}
+	loadedInstances := Instances{}
 
 	resp, err := svc.DescribeInstances(nil)
 	if err != nil {

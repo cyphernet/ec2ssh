@@ -1,29 +1,14 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"io/ioutil"
 	"os"
-	"os/exec"
-	"os/user"
-	"strconv"
-	"strings"
-	"text/tabwriter"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/cyphernet/ec2ssh/aws"
+	"github.com/cyphernet/ec2ssh/instance"
+	"github.com/cyphernet/ec2ssh/ui"
+	"github.com/cyphernet/ec2ssh/cmd"
 	"github.com/codegangsta/cli"
-	"github.com/vaughan0/go-ini"
-	"github.com/aws/aws-sdk-go/aws/session"
 )
-
-type password string
-
-func (p password) Password(user string) (password string, err error) {
-	return string(p), nil
-}
 
 func main() {
 
@@ -31,73 +16,13 @@ func main() {
 	app.Name = "ec2ssh"
 	app.Usage = "ssh into ec2 instances"
 	app.Action = func(c *cli.Context) {
+		svc := aws.GetService(c.String("profile"), c.String("region"))
+		ec2Instances := instance.GetInstances(svc, c.Args().First() == "a")
 
-		awsCredentials := *credentials.NewChainCredentials(
-			[]credentials.Provider{
-				&credentials.EnvProvider{},
-				&credentials.SharedCredentialsProvider{Filename: "", Profile: c.String("profile")},
-			})
+		ui.Show(ec2Instances)
+		i := ui.Get()
 
-		sess, err := session.NewSession(&aws.Config{
-			MaxRetries: aws.Int(3),
-		})
-
-		svc := ec2.New(sess, &aws.Config{Region: aws.String(c.String("region")), Credentials: &awsCredentials})
-
-		ec2Instances := getInstances(svc, (c.Args().First() == "a"))
-
-		w := new(tabwriter.Writer)
-		w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-		fmt.Fprintln(w, "Index\tName\tIP\tInstance Type\tState")
-		for i, c := range ec2Instances {
-			fmt.Fprintln(w, strconv.Itoa(i)+"\t"+c.Name+"\t"+c.IP+"\t"+c.InstanceType+"\t"+c.State)
-		}
-		w.Flush()
-
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Enter index: ")
-		text, _ := reader.ReadString('\n')
-		i, err := strconv.Atoi(strings.TrimSpace(text))
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println("Connecting to " + ec2Instances[i].Name + " (" + ec2Instances[i].IP + ")")
-
-		usr, err := user.Current()
-		if err != nil {
-			panic(err)
-		}
-
-		configFile := usr.HomeDir + string(os.PathSeparator) + ".ec2ssh"
-		username := ""
-		key := ""
-		if _, err := os.Stat(configFile); os.IsNotExist(err) {
-			defaultConfig := "[ssh]\nusername = \nkey ="
-			err = ioutil.WriteFile(configFile, []byte(defaultConfig), 0644)
-			if err != nil {
-				panic(err)
-			}
-
-		} else {
-			file, err := ini.LoadFile(configFile)
-			if err != nil {
-				panic(err)
-			}
-
-			username, _ = file.Get("ssh", "username")
-			key, _ = file.Get("ssh", "key")
-		}
-
-		cmd := exec.Command("ssh", "-i", key, username+"@"+ec2Instances[i].IP)
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-
-		err = cmd.Run()
-		if err != nil {
-			panic(err)
-		}
+		cmd.Exec(ec2Instances[i].Name, ec2Instances[i].IP)
 	}
 
 	app.Flags = []cli.Flag{
